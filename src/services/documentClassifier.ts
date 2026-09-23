@@ -51,7 +51,9 @@ export function classifyDocumentText(rawText: string): ClassificationResult {
     /texas\s+property\s+code/i.test(text) ||
     /superior\s+court\s+of\s+california/i.test(text) ||
     /justice\s+of\s+the\s+peace/i.test(text) ||
-    /commercial\s+shipping\s+manifest/i.test(text) ||
+    /(?:international\s+)?shipping\s+(?:commercial\s+)?manifest/i.test(text) ||
+    /commercial\s+shipping/i.test(text) ||
+    /shipping\s+containers\s+from\s+port/i.test(text) ||
     /foreign\s+arbitration\s+award/i.test(text) ||
     /traffic\s+challan/i.test(text) ||
     /passport\s+application/i.test(text)

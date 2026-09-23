@@ -28,9 +28,9 @@ const PROHIBITED_RULES: Array<{
     description: 'Outcome prediction prohibited.'
   },
   {
-    pattern: /\b(?:this is (?:definitely |clearly )?illegal|the landlord acted illegally|an illegal eviction)\b/gi,
+    pattern: /\b(?:this (?:is|notice is) (?:definitely |clearly |totally )?illegal|the landlord acted illegally|an illegal eviction)\b/gi,
     category: 'legal_advice',
-    replacement: 'the document may have statutory defects that should be evaluated by tenant counsel',
+    replacement: 'the document may have statutory defects that should be evaluated by legal aid or tenant counsel',
     description: 'Definitive determination of illegality.'
   },
   {
@@ -65,25 +65,25 @@ export function auditAndSanitizeText(input: string): {
   let wasModified = false;
 
   for (const rule of PROHIBITED_RULES) {
-    if (rule.pattern.test(text)) {
-      const matches = text.match(rule.pattern);
-      if (matches) {
-        matches.forEach(m => {
-          violations.push({
-            matchedPhrase: m,
-            category: rule.category,
-            remedy: rule.description
-          });
+    rule.pattern.lastIndex = 0;
+    const matches = text.match(rule.pattern);
+    if (matches && matches.length > 0) {
+      matches.forEach(m => {
+        violations.push({
+          matchedPhrase: m,
+          category: rule.category,
+          remedy: rule.description
         });
-      }
+      });
+      rule.pattern.lastIndex = 0;
       text = text.replace(rule.pattern, rule.replacement);
       wasModified = true;
     }
   }
 
-  // Ensure mandatory uncertainty framing exists in summaries
-  if (!/the document appears to say|visible in the document|verify with the official court/i.test(text)) {
-    // Subtle prepend or append for legal clarity if needed
+  // Ensure mandatory uncertainty framing exists when safety violations were neutralized
+  if (wasModified && !text.includes('cannot be determined safely')) {
+    text = `${text} (Notice validity and outcomes cannot be determined safely without official advocate or court review.)`;
   }
 
   return {
@@ -97,5 +97,10 @@ export function auditAndSanitizeText(input: string): {
  * Checks if raw text contains any severe safety violation that warrants rejection
  */
 export function containsProhibitedLegalConclusion(text: string): boolean {
-  return PROHIBITED_RULES.some(rule => rule.pattern.test(text));
+  return PROHIBITED_RULES.some(rule => {
+    rule.pattern.lastIndex = 0;
+    const res = rule.pattern.test(text);
+    rule.pattern.lastIndex = 0;
+    return res;
+  });
 }

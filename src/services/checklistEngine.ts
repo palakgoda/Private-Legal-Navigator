@@ -163,7 +163,7 @@ export function generateDeterministicResults(params: {
     nextSteps = [
       {
         id: 'step_ni_15day_receipt',
-        step: 'Confirm exact date of notice receipt (Postal / Speed Post / WhatsApp)',
+        step: 'Confirm 15-Day statutory notice receipt date (Postal / Speed Post / WhatsApp)',
         explanation: 'Preserve the registered post envelope, speed post consignment number, or WhatsApp delivery tick. In Indian courts, limitation begins strictly from the date you received the notice.',
         urgency: 'immediate',
         citationId: 'ni_act_section_138'
