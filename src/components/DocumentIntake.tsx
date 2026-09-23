@@ -27,6 +27,7 @@ import { SYNTHETIC_FIXTURES } from '../services/localOcrService';
 import { SupportedLanguage, getTranslation } from '../services/i18n';
 import { AnimatedTooltip } from './AnimatedTooltip';
 import { IntakeWalkthroughOverlay } from './IntakeWalkthroughOverlay';
+import { LocalProcessor } from './LocalProcessor';
 
 interface DocumentIntakeProps {
   selectedJurisdictionId: PilotJurisdictionId;
@@ -224,6 +225,13 @@ export const DocumentIntake: React.FC<DocumentIntakeProps> = ({
           })}
         </div>
       </section>
+
+      {/* Local In-Browser Processing & Privacy Sandbox Indicator */}
+      <LocalProcessor
+        isProcessing={isProcessing}
+        stage={isProcessing ? 'ocr' : 'ready'}
+        language={language}
+      />
 
       {/* Mode Tabs: Synthetic Indian Scenarios vs Real Upload vs Direct Paste */}
       <section className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-xs">

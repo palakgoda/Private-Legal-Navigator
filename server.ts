@@ -49,7 +49,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'Private Legal Navigator API',
-    pilotJurisdiction: 'California',
+    pilotJurisdiction: 'Indian Civil & Tenancy Notice Navigator (Maharashtra, Karnataka, Delhi, Central Acts)',
     aiEnabled: Boolean(process.env.GEMINI_API_KEY)
   });
 });
@@ -72,11 +72,17 @@ app.post('/api/navigator/explain', async (req, res) => {
 
     const { jurisdiction, documentType, statedReason, visibleDates, language } = payload;
 
-    // Pilot Jurisdiction Verification: Must be California
-    if (jurisdiction && !jurisdiction.toLowerCase().includes('california')) {
+    // Pilot Jurisdiction Verification: Must be within supported Indian or configured pilot jurisdictions
+    const validJurisdictions = ['india', 'maharashtra', 'karnataka', 'delhi', 'all india', 'central'];
+    const isSupportedJurisdiction =
+      !jurisdiction ||
+      validJurisdictions.some(j => jurisdiction.toLowerCase().includes(j)) ||
+      jurisdiction.toLowerCase().includes('california');
+
+    if (!isSupportedJurisdiction) {
       return res.status(422).json({
-        error: 'Unsupported Jurisdiction: The pilot only supports California eviction documents.',
-        explanation: 'The system cannot provide guidance for jurisdictions outside California in this pilot phase.'
+        error: `Unsupported Jurisdiction: ${jurisdiction}. The system operates under Indian statutory law (NI Act 1881, TP Act 1882, CPC 1908).`,
+        explanation: 'The system cannot provide guidance for jurisdictions outside the configured pilot jurisdictions.'
       });
     }
 
@@ -165,13 +171,13 @@ Provide an objective plain-language summary in ${language || 'English'} explaini
 
     if (!generationSucceeded || !outputText) {
       // Graceful deterministic fallback without 500 failure
-      const docLabel = documentType ? documentType.replace(/_/g, ' ') : 'California tenant notice';
+      const docLabel = documentType ? documentType.replace(/_/g, ' ') : 'Indian legal notice';
       return res.json({
-        explanation: `The document appears to say it is a ${docLabel} under California landlord-tenant law${statedReason ? ` with stated reason: "${statedReason}"` : ''}. All critical procedural details and court dates should be independently verified. (Standard verified legal guidance applied because the cloud AI service is experiencing high demand).`,
+        explanation: `The document appears to say it is an Indian legal document (${docLabel})${statedReason ? ` with stated reason: "${statedReason}"` : ''}. All critical procedural details, statutory limitation periods, and court dates should be independently verified. (Standard verified legal guidance applied because the cloud AI service is experiencing high demand).`,
         unknowns: [
-          'Exact date, time, and statutory method of service (CCP § 1162)',
-          'Whether the tenancy is subject to the California Tenant Protection Act (AB 1482) or local rent stabilization ordinances',
-          'Current status of court docket or case filing with the local Superior Court'
+          'Exact date and statutory proof of notice delivery (registered post / speed post tracking)',
+          'Whether the dispute falls under Section 138 NI Act, Rent Control Act, or Civil Procedure Code Order 5',
+          'Current status of court docket or case filing on the official eCourts portal (services.ecourts.gov.in)'
         ],
         aiModelUsed: 'deterministic-rules-engine (ai-service-unavailable-fallback)',
         usedFallback: true,
@@ -203,10 +209,10 @@ Provide an objective plain-language summary in ${language || 'English'} explaini
     console.warn('[AI Gateway]: Request completed with local procedural fallback:', err?.message);
     const docLabel = req.body?.documentType ? String(req.body.documentType).replace(/_/g, ' ') : 'notice';
     return res.json({
-      explanation: `The document appears to say it is a ${docLabel} governed by California landlord-tenant procedure. Procedural deadlines and proof of service must be verified with the court or local legal aid.`,
+      explanation: `The document appears to say it is an Indian legal document (${docLabel}) governed by Indian civil/tenancy procedure. Procedural deadlines, speed post delivery date, and proof of service must be verified with the court or local legal aid (NALSA 15100).`,
       unknowns: [
-        'Exact date and legal method of service',
-        'Calculation of court calendar days versus business days'
+        'Exact date and statutory method of service/receipt',
+        'Applicable limitation clock (e.g. 15-day Section 138 or 30-day CPC written statement)'
       ],
       aiModelUsed: 'local-deterministic-engine',
       usedFallback: true,

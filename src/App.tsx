@@ -3,23 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { TopBar } from './components/TopBar';
 import { PrivacyStatusBanner } from './components/PrivacyStatusBanner';
 import { DocumentIntake } from './components/DocumentIntake';
 import { PrivacyReview } from './components/PrivacyReview';
 import { ExtractionReview } from './components/ExtractionReview';
 import { NavigatorResults } from './components/NavigatorResults';
-import { PrivacyModal } from './components/PrivacyModal';
-import { AuditTestModal } from './components/AuditTestModal';
-import { PrintSummaryView } from './components/PrintSummaryView';
-import { AuthModal } from './components/AuthModal';
-import { SavedAssessmentsModal } from './components/SavedAssessmentsModal';
-import { UnsavedExitModal } from './components/UnsavedExitModal';
 import { NavigationControls } from './components/NavigationControls';
-import { WhyNotGeneralAiModal } from './components/WhyNotGeneralAiModal';
 import { FaqSection } from './components/FaqSection';
 import { FontSizeLevel } from './components/SeniorAccessibilityBar';
+
+// Lazy-load interactive modals for maximum initial load efficiency
+const PrivacyModal = lazy(() => import('./components/PrivacyModal').then(m => ({ default: m.PrivacyModal })));
+const AuditTestModal = lazy(() => import('./components/AuditTestModal').then(m => ({ default: m.AuditTestModal })));
+const PrintSummaryView = lazy(() => import('./components/PrintSummaryView').then(m => ({ default: m.PrintSummaryView })));
+const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
+const SavedAssessmentsModal = lazy(() => import('./components/SavedAssessmentsModal').then(m => ({ default: m.SavedAssessmentsModal })));
+const UnsavedExitModal = lazy(() => import('./components/UnsavedExitModal').then(m => ({ default: m.UnsavedExitModal })));
+const WhyNotGeneralAiModal = lazy(() => import('./components/WhyNotGeneralAiModal').then(m => ({ default: m.WhyNotGeneralAiModal })));
 import {
   PilotJurisdictionId,
   DocumentTypeId,
@@ -394,15 +396,17 @@ export default function App() {
     }, 120);
   };
 
-  // Build current sanitized preview
-  const sanitizedPayloadPreview = buildSanitizedPayload({
-    jurisdiction: JURISDICTIONS[selectedJurisdictionId]?.name || 'India',
-    documentType,
-    statedReason: extractedFields.find(f => f.key === 'statedReason')?.value || null,
-    visibleDates: extractedFields.find(f => f.key === 'visibleDates')?.value?.split(',') || [],
-    redactedExcerpt: applyRedactions(rawDocumentText.slice(0, 300), detectedPii),
-    language: language === 'hi' ? 'Hindi' : language === 'mr' ? 'Marathi' : 'English'
-  });
+  // Build current sanitized preview with memoization for render efficiency
+  const sanitizedPayloadPreview = useMemo(() => {
+    return buildSanitizedPayload({
+      jurisdiction: JURISDICTIONS[selectedJurisdictionId]?.name || 'India',
+      documentType,
+      statedReason: extractedFields.find(f => f.key === 'statedReason')?.value || null,
+      visibleDates: extractedFields.find(f => f.key === 'visibleDates')?.value?.split(',') || [],
+      redactedExcerpt: applyRedactions(rawDocumentText.slice(0, 300), detectedPii),
+      language: language === 'hi' ? 'Hindi' : language === 'mr' ? 'Marathi' : 'English'
+    });
+  }, [selectedJurisdictionId, documentType, extractedFields, rawDocumentText, detectedPii, language]);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
@@ -575,74 +579,85 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Why Not General AI? Comparison Modal (Mentor/Judge Core Question) */}
-      <WhyNotGeneralAiModal
-        isOpen={showWhyNotAiModal}
-        onClose={() => setShowWhyNotAiModal(false)}
-        language={language}
-        onRunAuditTests={() => setShowTestModal(true)}
-      />
+      {/* Lazy-loaded Interactive Modals with Zero Impact on First Paint */}
+      <Suspense fallback={null}>
+        {/* Why Not General AI? Comparison Modal (Mentor/Judge Core Question) */}
+        {showWhyNotAiModal && (
+          <WhyNotGeneralAiModal
+            isOpen={showWhyNotAiModal}
+            onClose={() => setShowWhyNotAiModal(false)}
+            language={language}
+            onRunAuditTests={() => setShowTestModal(true)}
+          />
+        )}
 
-      {/* Auth Modal (Citizen Login / Register) */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onAuthSuccess={handleAuthSuccess}
-        language={language}
-      />
+        {/* Auth Modal (Citizen Login / Register) */}
+        {showAuthModal && (
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onAuthSuccess={handleAuthSuccess}
+            language={language}
+          />
+        )}
 
-      {/* Saved Assessments Drawer / Modal */}
-      <SavedAssessmentsModal
-        isOpen={showSavedModal}
-        onClose={() => setShowSavedModal(false)}
-        assessments={savedAssessments}
-        onLoadAssessment={handleLoadSavedAssessment}
-        onAssessmentDeleted={handleAssessmentDeleted}
-        language={language}
-      />
+        {/* Saved Assessments Drawer / Modal */}
+        {showSavedModal && (
+          <SavedAssessmentsModal
+            isOpen={showSavedModal}
+            onClose={() => setShowSavedModal(false)}
+            assessments={savedAssessments}
+            onLoadAssessment={handleLoadSavedAssessment}
+            onAssessmentDeleted={handleAssessmentDeleted}
+            language={language}
+          />
+        )}
 
-      {/* Unsaved Exit / Session Close Warning Modal */}
-      <UnsavedExitModal
-        isOpen={showUnsavedExitModal}
-        onClose={() => setShowUnsavedExitModal(false)}
-        onSaveAndLogin={() => {
-          setShowUnsavedExitModal(false);
-          setShowAuthModal(true);
-        }}
-        onSaveLocally={() => {
-          saveActiveAssessment('guest_citizen');
-          setShowUnsavedExitModal(false);
-        }}
-        onDiscardAndExit={wipeMemorySession}
-        language={language}
-      />
+        {/* Unsaved Exit / Session Close Warning Modal */}
+        {showUnsavedExitModal && (
+          <UnsavedExitModal
+            isOpen={showUnsavedExitModal}
+            onClose={() => setShowUnsavedExitModal(false)}
+            onSaveAndLogin={() => {
+              setShowUnsavedExitModal(false);
+              setShowAuthModal(true);
+            }}
+            onSaveLocally={() => {
+              saveActiveAssessment('guest_citizen');
+              setShowUnsavedExitModal(false);
+            }}
+            onDiscardAndExit={wipeMemorySession}
+            language={language}
+          />
+        )}
 
-      {/* Privacy Architecture Modal */}
-      {showPrivacyModal && (
-        <PrivacyModal
-          isOpen={showPrivacyModal}
-          onClose={() => setShowPrivacyModal(false)}
-        />
-      )}
+        {/* Privacy Architecture Modal */}
+        {showPrivacyModal && (
+          <PrivacyModal
+            isOpen={showPrivacyModal}
+            onClose={() => setShowPrivacyModal(false)}
+          />
+        )}
 
-      {/* Automated Tests Modal */}
-      {showTestModal && (
-        <AuditTestModal
-          isOpen={showTestModal}
-          onClose={() => setShowTestModal(false)}
-          onOpenWhyNotAiModal={() => setShowWhyNotAiModal(true)}
-        />
-      )}
+        {/* Automated Tests Modal */}
+        {showTestModal && (
+          <AuditTestModal
+            isOpen={showTestModal}
+            onClose={() => setShowTestModal(false)}
+            onOpenWhyNotAiModal={() => setShowWhyNotAiModal(true)}
+          />
+        )}
 
-      {/* Printable Summary Modal */}
-      {showPrintModal && results && (
-        <PrintSummaryView
-          isOpen={showPrintModal}
-          onClose={() => setShowPrintModal(false)}
-          results={results}
-          documentTitle={documentTitle}
-        />
-      )}
+        {/* Printable Summary Modal */}
+        {showPrintModal && results && (
+          <PrintSummaryView
+            isOpen={showPrintModal}
+            onClose={() => setShowPrintModal(false)}
+            results={results}
+            documentTitle={documentTitle}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

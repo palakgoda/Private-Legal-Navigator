@@ -31,6 +31,7 @@ import { UrgentEscalationCard } from './UrgentEscalationCard';
 import { UrgencyMeterWidget } from './UrgencyMeterWidget';
 import { LegalProcedureTimelineWidget } from './LegalProcedureTimelineWidget';
 import { SeniorAccessibilityBar, FontSizeLevel } from './SeniorAccessibilityBar';
+import { AccessibilityExport } from './AccessibilityExport';
 import { SupportedLanguage, getTranslation } from '../services/i18n';
 
 interface NavigatorResultsProps {
@@ -230,12 +231,12 @@ export const NavigatorResults: React.FC<NavigatorResultsProps> = ({
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900" data-testid="section-what-document-says">
                 {language === 'hi'
-                  ? '1. यह दस्तावेज़ क्या कहता है (सरल सारांश)'
+                  ? '1. यह दस्तावेज़ क्या कहता है (What This Document Says)'
                   : language === 'mr'
-                  ? '१. हा दस्तऐवज काय सांगतो (सोपे सारांश)'
-                  : '1. What This Document Appears to Say'}
+                  ? '१. हा दस्तऐवज काय सांगतो (What This Document Says)'
+                  : '1. What This Document Says'}
               </h3>
               <p className="text-xs text-slate-500">
                 {language === 'hi'
@@ -270,11 +271,11 @@ export const NavigatorResults: React.FC<NavigatorResultsProps> = ({
             <Calendar className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-slate-900" data-testid="section-dates-to-verify">
               {language === 'hi'
-                ? '2. तारीखों का सत्यापन (समयसीमा कभी स्वतः न गिनें)'
+                ? '2. तारीखों का सत्यापन (Dates to Verify — कभी स्वतः न गिनें)'
                 : language === 'mr'
-                ? '२. तारखांची पडताळणी (मुदत स्वतः मोजू नका)'
+                ? '२. तारखांची पडताळणी (Dates to Verify — मुदत स्वतः मोजू नका)'
                 : '2. Dates to Verify (Never Silently Calculated)'}
             </h3>
             <p className="text-xs text-slate-500">
@@ -317,12 +318,12 @@ export const NavigatorResults: React.FC<NavigatorResultsProps> = ({
             <HelpCircle className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-slate-900" data-testid="section-what-is-unclear">
               {language === 'hi'
-                ? '3. कागज़ात से क्या स्पष्ट नहीं हो सकता (अज्ञात बिंदु)'
+                ? '3. क्या अस्पष्ट है (What Is Unclear — कागज़ात से सुरक्षित रूप से तय नहीं हो सकता)'
                 : language === 'mr'
-                ? '३. कागदपत्रांवरून काय स्पष्ट होत नाही (अज्ञात मुद्दे)'
-                : '3. What Cannot Be Determined Safely from Text Alone'}
+                ? '३. काय अस्पष्ट आहे (What Is Unclear — कागदपत्रांवरून ठरवता येत नाही)'
+                : '3. What Is Unclear (Cannot Be Determined Safely from Text Alone)'}
             </h3>
             <p className="text-xs text-slate-500">
               {language === 'hi'
@@ -355,12 +356,12 @@ export const NavigatorResults: React.FC<NavigatorResultsProps> = ({
               <CheckSquare className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900" data-testid="section-what-you-can-do-now">
                 {language === 'hi'
-                  ? '4. आपके लिए अनुशंसित अगले कदम (चेकलिस्ट)'
+                  ? '4. आप अब क्या कर सकते हैं (What You Can Do Now — चेकलिस्ट)'
                   : language === 'mr'
-                  ? '४. आपल्यासाठी पुढील शिफारस केलेली पावले (चेकलिस्ट)'
-                  : '4. Actionable Next Steps Checklist'}
+                  ? '४. तुम्ही आता काय करू शकता (What You Can Do Now — चेकलिस्ट)'
+                  : '4. What You Can Do Now (Actionable Next Steps Checklist)'}
               </h3>
               <p className="text-xs text-slate-500">
                 {language === 'hi'
@@ -481,6 +482,14 @@ export const NavigatorResults: React.FC<NavigatorResultsProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Accessibility Export Module (WCAG Accessible Plain Text & Semantic HTML) */}
+      <AccessibilityExport
+        results={results}
+        documentType={documentType}
+        language={language}
+        onPrint={onOpenPrintModal}
+      />
     </motion.div>
   );
 };

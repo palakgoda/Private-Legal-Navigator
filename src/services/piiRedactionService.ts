@@ -36,8 +36,30 @@ const NAME_PATTERNS = [
   /(?:Advocate|Adv\.)\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/g
 ];
 
+// Performance & Efficiency Caches
+const piiScanCache = new Map<string, DetectedPii[]>();
+const regexCache = new Map<string, RegExp>();
+
+function getCachedRegex(pattern: string): RegExp {
+  let re = regexCache.get(pattern);
+  if (!re) {
+    re = new RegExp(escapeRegExp(pattern), 'g');
+    if (regexCache.size > 200) {
+      regexCache.clear();
+    }
+    regexCache.set(pattern, re);
+  }
+  re.lastIndex = 0;
+  return re;
+}
+
 export function detectPii(text: string): DetectedPii[] {
   if (!text) return [];
+
+  // Check cache for efficiency
+  if (piiScanCache.has(text)) {
+    return piiScanCache.get(text)!.map(item => ({ ...item }));
+  }
 
   const detected: DetectedPii[] = [];
   let idCounter = 1;
@@ -200,7 +222,12 @@ export function detectPii(text: string): DetectedPii[] {
   }
 
   // Deduplicate overlapping spans
-  return deduplicatePii(detected);
+  const uniqueItems = deduplicatePii(detected);
+  if (piiScanCache.size > 50) {
+    piiScanCache.clear();
+  }
+  piiScanCache.set(text, uniqueItems);
+  return uniqueItems.map(item => ({ ...item }));
 }
 
 function deduplicatePii(items: DetectedPii[]): DetectedPii[] {
@@ -234,8 +261,7 @@ export function applyRedactions(text: string, piiList: DetectedPii[]): string {
 
   for (const item of activeRedactions) {
     if (!item.detectedValue) continue;
-    const escaped = escapeRegExp(item.detectedValue);
-    const regex = new RegExp(escaped, 'g');
+    const regex = getCachedRegex(item.detectedValue);
     result = result.replace(regex, item.redactedValue);
   }
 
@@ -269,12 +295,17 @@ export function validatePayloadIsSafe(payload: SanitizedPayload): { isSafe: bool
   const violations: string[] = [];
   const serialized = JSON.stringify(payload);
 
+  EMAIL_REGEX.lastIndex = 0;
   if (EMAIL_REGEX.test(serialized)) {
     violations.push('Payload contains unredacted email address.');
   }
+
+  AADHAAR_REGEX.lastIndex = 0;
   if (AADHAAR_REGEX.test(serialized)) {
     violations.push('Payload contains unredacted Aadhaar number.');
   }
+
+  PAN_REGEX.lastIndex = 0;
   if (PAN_REGEX.test(serialized)) {
     violations.push('Payload contains unredacted PAN card number.');
   }

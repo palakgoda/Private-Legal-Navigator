@@ -113,8 +113,14 @@ Optional AI gateway
 ## Jurisdiction and scope
 
 - The MVP supports **one pilot jurisdiction**, set in configuration and documented below.
-- Current pilot jurisdiction: `e.g. "State/County, Country`
-- Supported document types: `e.g. eviction notice, summons, complaint, hearing notice`
+- Current pilot jurisdiction: `Indian Civil & Tenancy Notice Jurisdiction (Maharashtra, Karnataka, Delhi, Central Acts)`
+- Supported document types:
+  - `eviction_notice` — Eviction & Tenancy Demand Notice (e.g. Maharashtra Rent Control Act Section 15 / State Tenancy Acts)
+  - `court_summons` — Court Summons & Hearing Notice (Code of Civil Procedure, 1908 Order V)
+  - `ni138_cheque_bounce` — Section 138 Negotiable Instruments Statutory Demand Notice
+  - `tp106_lease_termination` — Transfer of Property Act Section 106 Notice to Quit
+  - `consumer_complaint` — Consumer Protection Act Legal Notice
+  - `loan_recovery` — Banking & Financial Debt Recovery Notice
 - Requests outside the pilot jurisdiction receive general resource discovery only — never jurisdiction-specific procedural claims.
 - Unsupported or unclassifiable documents are explicitly refused rather than guessed at.
 
@@ -133,23 +139,23 @@ A deterministic post-processor validates AI output against these rules before di
 
 ## Getting started
 
-> Fill in this section with the actual stack once implementation begins. The instructions below assume a typical local web-app setup; adjust to match the framework actually used in this repository.
+The application is built with React 19, TypeScript, Vite, Tailwind CSS, and Node.js.
 
 ```bash
 # install dependencies
-<package manager install command>
+npm install
 
 # run the app locally
-<dev server command>
+npm run dev
 
 # run tests
-<test command>
+npm test
 
 # run lint/format
-<lint command>
+npm run lint
 
 # production build
-<build command>
+npm run build
 ```
 
 Before adding any dependency, check whether the requirement can be met with the existing stack — the project intentionally avoids large models, binary assets, and anything that threatens the 10 MB repository limit.
