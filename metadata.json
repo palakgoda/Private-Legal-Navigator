@@ -1,0 +1,7 @@
+{
+  "name": "Private Legal Navigator",
+  "description": "Privacy-first, local-processing legal document navigator for tenant notices and court papers with verified sources and safe next steps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
