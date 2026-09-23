@@ -113,8 +113,8 @@ Optional AI gateway
 ## Jurisdiction and scope
 
 - The MVP supports **one pilot jurisdiction**, set in configuration and documented below.
-- Current pilot jurisdiction: `<SET_ME — e.g. "State/County, Country">`
-- Supported document types: `<SET_ME — e.g. eviction notice, summons, complaint, hearing notice>`
+- Current pilot jurisdiction: `e.g. "State/County, Country`
+- Supported document types: `e.g. eviction notice, summons, complaint, hearing notice`
 - Requests outside the pilot jurisdiction receive general resource discovery only — never jurisdiction-specific procedural claims.
 - Unsupported or unclassifiable documents are explicitly refused rather than guessed at.
 
